@@ -1,8 +1,9 @@
+import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { useEffect, useState } from "react";
 import Seo from "../components/Seo";
 
 const API_KEY = process.env.API_KEY;
-interface Movie {
+interface IMovieProps {
   adult: boolean;
   backdrop_path: string;
   genre_ids: number[];
@@ -19,24 +20,14 @@ interface Movie {
   vote_count: number;
 }
 
-export default function Home(): JSX.Element {
-  const [movies, setMovies] = useState<Movie[]>([]);
-  useEffect(() => {
-    (async () => {
-      const { results }: { results: Movie[] } = await (
-        await fetch("/api/movies")
-      ).json();
-      setMovies(results);
-      // console.log(results);
-    })();
-  }, []);
-
+export default function Home({
+  results,
+}: InferGetServerSidePropsType<GetServerSideProps>): JSX.Element {
   return (
     <div className="container">
-      {!movies && <h4>Loading...</h4>}
-      {movies?.map((movie) => (
+      {results?.map((movie: IMovieProps) => (
         <div className="movie" key={movie.id}>
-          <img src={`https://image.tmdb.org/t/p/w500/${movie.poster_path}`} />
+          <img src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`} />
           <h4>{movie.original_title}</h4>
         </div>
       ))}
@@ -46,6 +37,9 @@ export default function Home(): JSX.Element {
           grid-template-columns: 1fr 1fr;
           padding: 20px;
           gap: 20px;
+        }
+        .movie {
+          cursor: pointer;
         }
         .movie img {
           max-width: 100%;
@@ -63,4 +57,15 @@ export default function Home(): JSX.Element {
       `}</style>
     </div>
   );
+}
+
+export async function getServerSideProps({}: GetServerSideProps) {
+  const { results } = await (
+    await fetch(`http://localhost:3000/api/movies`)
+  ).json();
+  return {
+    props: {
+      results,
+    },
+  };
 }
